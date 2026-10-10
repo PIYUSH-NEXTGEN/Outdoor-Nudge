@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Outdoor Nudge</title>
+<style>
+:root{
+  --ivory:#f7f4ec; --surface:#fffdf7; --ink:#2b2b26; --muted:#6f6e63;
+  --moss:#4a5d43; --moss-dark:#3a4a35; --sage:#8a9b7e; --line:#ddd8c8;
+  --earth:#b09a7a; --shadow:0 1px 2px rgba(43,43,38,.07);
+  --radius:8px; --bg:var(--ivory); --panel:var(--surface);
+}
+@media (prefers-color-scheme:dark){
+  :root{
+    --bg:#1e201b; --panel:#26281f; --ink:#e8e4d5; --muted:#a8a494;
+    --moss:#9db08c; --moss-dark:#b7c6a6; --sage:#7d8f70; --line:#3a3d31;
+    --earth:#a08b66; --shadow:0 1px 2px rgba(0,0,0,.35);
+  }
+}
+body[data-weather="sunny"]{ --bg:#f8f3e6; }
+body[data-weather="grey"]{ --bg:#efeeea; }
+body[data-weather="night"]{ --bg:#e9e9e4; }
+@media (prefers-color-scheme:dark){
+  body[data-weather="sunny"]{ --bg:#23211a; }
+  body[data-weather="grey"]{ --bg:#1c1e1e; }
+  body[data-weather="night"]{ --bg:#16181c; }
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0; background:var(--bg); color:var(--ink);
+  font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Georgia,"Times New Roman",serif;
+  font-size:16px; line-height:1.55; transition:background-color .8s ease;
+}
+@media (prefers-reduced-motion:reduce){
+  body{transition:none}
+  *{animation:none!important; transition:none!important}
+}
+.wrap{max-width:620px; margin:0 auto; padding:20px 18px 64px}
+header.site{padding:28px 0 6px; border-bottom:1px solid var(--line); margin-bottom:18px}
+header.site h1{font-size:1.45rem; margin:0 0 2px; letter-spacing:.01em; font-weight:650}
+header.site p{margin:0 0 14px; color:var(--muted); font-size:.95rem}
+.weather{font-size:.9rem; color:var(--muted); padding:10px 0; border-bottom:1px solid var(--line); min-height:44px}
+.weather strong{color:var(--ink); font-weight:600}
+.weather .retry{background:none;border:none;color:var(--moss);text-decoration:underline;cursor:pointer;font-size:.85rem;padding:0;margin-left:8px}
+.weather input[type=text]{width:100%;margin-top:6px;padding:9px 10px;font:inherit;color:var(--ink);background:var(--panel);border:1px solid var(--line);border-radius:var(--radius)}
+main section{margin:22px 0}
+h2{font-size:1.02rem; margin:0 0 8px; font-weight:650}
+.hint{font-size:.86rem; color:var(--muted); margin:2px 0 10px}
+label{display:block; font-size:.9rem; margin:0 0 6px}
+textarea{
+  width:100%; min-height:84px; resize:vertical; font:inherit; line-height:1.5;
+  color:var(--ink); background:var(--panel); border:1px solid var(--line);
+  border-radius:var(--radius); padding:10px 12px;
+}
+textarea:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,[tabindex]:focus-visible{outline:2px solid var(--moss); outline-offset:2px}
+.chips{display:flex; flex-wrap:wrap; gap:8px; margin:10px 0 0}
+.chip{
+  font:inherit; font-size:.88rem; padding:7px 13px; min-height:36px; cursor:pointer;
+  border:1px solid var(--line); border-radius:999px; background:transparent; color:var(--ink);
+}
+.chip[aria-pressed="true"]{background:var(--moss); border-color:var(--moss); color:#fff}
+@media (prefers-color-scheme:dark){ .chip[aria-pressed="true"]{color:#1e201b} }
+.btn-row{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px}
+button.primary{
+  font:inherit; font-weight:600; font-size:1rem; padding:12px 26px; min-height:48px;
+  background:var(--moss); color:#fff; border:none; border-radius:var(--radius); cursor:pointer;
+}
+@media (prefers-color-scheme:dark){ button.primary{color:#1e201b} }
+button.primary:hover{background:var(--moss-dark)}
+button.primary:disabled{opacity:.55; cursor:wait}
+button.ghost{
+  font:inherit; font-size:.9rem; padding:10px 16px; min-height:44px; cursor:pointer;
+  background:transparent; color:var(--ink); border:1px solid var(--line); border-radius:var(--radius);
+}
+button.ghost:disabled{opacity:.5; cursor:wait}
+button.ghost.done{border-color:var(--moss); color:var(--moss); font-weight:600}
+.status{font-size:.9rem; color:var(--muted); margin-top:10px; min-height:1.4em}
+.status[role="status"],.status[role="alert"]{color:var(--ink)}
+.error-text{color:#a33b2e}
+@media (prefers-color-scheme:dark){ .error-text{color:#e08a7d} }
+</style>
+</head>
+<body>
+<div class="wrap">
+<header class="site">
+  <h1>Outdoor Nudge</h1>
+  <p>Small outdoor activities, matched to how you feel and the weather.</p>
+  <div class="weather" id="weather" aria-live="polite">Checking the sky…</div>
+</header>
+<main>
+
+<section aria-labelledby="mood-h">
+  <h2 id="mood-h">How are you feeling right now?</h2>
+  <p class="hint">A few words is plenty — low, restless, bored, wired, anything honest.</p>
+  <label for="mood">Your mood</label>
+  <textarea id="mood" placeholder="e.g. drained from meetings, need air"></textarea>
+  <div class="chips" role="group" aria-label="Quick moods">
+    <button type="button" class="chip" aria-pressed="false" data-mood="Restless">Restless</button>
+    <button type="button" class="chip" aria-pressed="false" data-mood="Drained">Drained</button>
+    <button type="button" class="chip" aria-pressed="false" data-mood="Overwhelmed">Overwhelmed</button>
+    <button type="button" class="chip" aria-pressed="false" data-mood="Need a reset">Need a reset</button>
+  </div>
+  <div class="btn-row">
+    <button type="button" class="primary" id="nudgeBtn">Nudge me</button>
+  </div>
+  <p class="status" id="nudgeStatus" role="status"></p>
+</section>
+<style>
+.result{border-top:2px solid var(--moss); padding-top:16px}
+.result .kicker{font-size:.8rem; text-transform:uppercase; letter-spacing:.09em; color:var(--muted); margin:0 0 4px}
+.result h3{font-size:1.3rem; margin:0 0 8px; line-height:1.3}
+.result .task{font-size:1.02rem; margin:0 0 10px}
+.result .why{color:var(--muted); font-size:.93rem; margin:0 0 10px}
+.result .meta{display:flex; flex-wrap:wrap; gap:6px 14px; font-size:.85rem; color:var(--muted); margin:0 0 12px}
+.result .meta span{overflow-wrap:anywhere; min-width:0}
+.bring{display:flex; flex-wrap:wrap; gap:6px; margin:0 0 4px; padding:0; list-style:none}
+.bring li{font-size:.82rem; border:1px solid var(--line); border-radius:6px; padding:2px 9px; color:var(--muted)}
+.timer{display:flex; align-items:center; flex-wrap:wrap; gap:10px; margin:14px 0 4px; padding-top:14px; border-top:1px solid var(--line)}
+.timer output{font-size:1.5rem; font-variant-numeric:tabular-nums; min-width:76px}
+.timer .tmsg{font-size:.88rem; color:var(--moss); font-weight:600}
+.actions{display:flex; flex-wrap:wrap; gap:10px; margin-top:14px}
+.compare-grid{display:grid; gap:18px; grid-template-columns:minmax(0,1fr)}
+@media (min-width:700px){ .compare-grid{grid-template-columns:minmax(0,1fr) minmax(0,1fr)} }
+.compare-grid .result{border-top:1px solid var(--line); padding-top:12px}
+.compare-grid .model-tag{font-size:.8rem; color:var(--muted); text-transform:uppercase; letter-spacing:.08em}
+details.history{border-top:1px solid var(--line); padding-top:6px}
+details.history summary{cursor:pointer; font-weight:650; padding:10px 0}
+details.history li{padding:9px 0; border-top:1px solid var(--line); font-size:.92rem}
+details.history li small{color:var(--muted); display:block; font-size:.8rem}
+details.history li .st{font-size:.78rem; text-transform:uppercase; letter-spacing:.07em; color:var(--moss); font-weight:700; margin-right:7px}
+.modelrow{display:flex; flex-wrap:wrap; gap:10px; align-items:end}
+.modelrow>div{flex:1 1 160px}
+select{font:inherit; color:var(--ink); background:var(--panel); border:1px solid var(--line); border-radius:var(--radius); padding:9px 10px; width:100%; min-height:44px}
+.toggle{display:flex; gap:8px; align-items:center; font-size:.9rem; margin-top:10px}
+.toggle input{width:18px; height:18px; accent-color:var(--moss)}
+.hidden{display:none!important}
+footer{margin-top:34px; padding-top:12px; border-top:1px solid var(--line); color:var(--muted); font-size:.82rem}
+</style>
+<section class="result hidden" id="result" aria-live="polite"></section>
+<section class="hidden" id="compareSec" aria-label="Comparison results">
+  <h2>Side by side</h2>
+  <div class="compare-grid" id="compareGrid"></div>
+</section>
+<section aria-labelledby="model-h">
+  <h2 id="model-h">Local model</h2>
+  <div class="modelrow">
+    <div>
+      <label for="model">Model</label>
+      <select id="model"><option>Loading…</option></select>
+    </div>
+    <div id="modelBWrap" class="hidden">
+      <label for="modelB">Second model</label>
+      <select id="modelB"></select>
+    </div>
+  </div>
+  <label class="toggle"><input type="checkbox" id="compareToggle"> Compare two models</label>
+  <p class="status" id="modelStatus" role="status"></p>
+</section>
+<details class="history" id="histBox">
+  <summary>History</summary>
+  <p class="status" id="histStatus" role="status"></p>
+  <ul id="histList"></ul>
+</details>
+<footer>Suggestions come from a local model via Ollama. Nothing leaves your machine except the weather lookup.</footer>
+</main>
+</div>
+<script>
+"use strict";
+const $ = (id) => document.getElementById(id);
+const weatherEl=$("weather"), moodEl=$("mood"), nudgeBtn=$("nudgeBtn"),
+  nudgeStatus=$("nudgeStatus"), resultEl=$("result"), compareSec=$("compareSec"),
+  compareGrid=$("compareGrid"), modelEl=$("model"), modelBWrap=$("modelBWrap"),
+  modelBEl=$("modelB"), compareToggle=$("compareToggle"), modelStatus=$("modelStatus"),
+  histBox=$("histBox"), histStatus=$("histStatus"), histList=$("histList");
+
+const state = { weather:null, weatherFailed:false, busy:false, current:null,
+  excluded:[], timerId:null, timerLeft:0, timerRunning:false, models:[] };
+
+function esc(s){ return String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+async function api(path, opts){
+  const r = await fetch(path, opts);
+  const text = await r.text();
+  let data = null;
+  try { data = text ? JSON.parse(text) : null; } catch(e){ throw new Error("Invalid response from server."); }
+  if(!r.ok){ throw new Error((data && data.error) || ("Request failed (" + r.status + ")")); }
+  return data;
+}
+function setAtmosphere(){
+  const d = (state.weather && state.weather.description || "").toLowerCase();
+  let kind = "";
+  if(!state.weatherFailed && state.weather){
+    if(state.weather.is_day === false) kind = "night";
+    else if(/rain|drizzle|shower|storm|hail|snow/.test(d)) kind = "grey";
+    else if(/cloud|overcast|fog|mist/.test(d)) kind = "grey";
+    else kind = "sunny";
+  }
+  document.body.dataset.weather = kind;
+}
+// ---- weather ----
+async function loadWeather(){
+  weatherEl.textContent = "Checking the sky…";
+  try{
+    const w = await api("/api/weather");
+    state.weather = w; state.weatherFailed = false;
+    const when = w.is_day === false ? "night" : (w.is_day === true ? "day" : "");
+    weatherEl.innerHTML = "<strong>" + esc(w.description || "—") + "</strong> · " +
+      esc(w.temperature_c ?? "—") + "°C · wind " + esc(w.wind_kph ?? "—") +
+      " kph" + (when ? " · " + esc(when) : "") +
+      ' <button type="button" class="retry" id="wxRetry">refresh</button>';
+    $("wxRetry").addEventListener("click", loadWeather);
+  }catch(e){
+    state.weather = null; state.weatherFailed = true;
+    weatherEl.innerHTML = "Live weather is unavailable. " +
+      '<label for="wxManual" style="margin-top:6px">Describe the weather</label>' +
+      '<input type="text" id="wxManual" placeholder="e.g. light rain, 12C, evening" autocomplete="off">' +
+      ' <button type="button" class="retry" id="wxRetry">try live again</button>';
+    $("wxRetry").addEventListener("click", loadWeather);
+  }
+  setAtmosphere();
+}
+function weatherOverride(){
+  if(!state.weatherFailed) return null;
+  const inp = $("wxManual");
+  return inp && inp.value.trim() ? inp.value.trim() : null;
+}
+// ---- models ----
+async function loadModels(){
+  modelStatus.textContent = "Looking for local models…";
+  try{
+    const d = await api("/api/models");
+    // de-dupe: Ollama can list the same tag twice (e.g. from multiple sources)
+    state.models = Array.from(new Set((d && d.models) || []));
+    if(!state.models.length){ throw new Error("No local models found. Run: ollama pull llama3.2:3b"); }
+    const keep = modelEl.value, keepB = modelBEl.value;
+    modelEl.innerHTML = ""; modelBEl.innerHTML = "";
+    for(const m of state.models){
+      const o = document.createElement("option"); o.value = m; o.textContent = m; modelEl.appendChild(o);
+      const o2 = document.createElement("option"); o2.value = m; o2.textContent = m; modelBEl.appendChild(o2);
+    }
+    // default compare pair: llama3.2:3b vs gemma3:4b (when both are available)
+    const DEFAULT_COMPARE = ["llama3.2:3b", "gemma3:4b"];
+    if(state.models.includes(keep) && keep) modelEl.value = keep;
+    else modelEl.value = state.models.includes(DEFAULT_COMPARE[0]) ? DEFAULT_COMPARE[0] : state.models[0];
+    // second model must differ from the first when possible
+    if(state.models.includes(keepB) && keepB && keepB !== modelEl.value) modelBEl.value = keepB;
+    else if(state.models.includes(DEFAULT_COMPARE[1]) && DEFAULT_COMPARE[1] !== modelEl.value) modelBEl.value = DEFAULT_COMPARE[1];
+    else {
+      const other = state.models.find(m => m !== modelEl.value);
+      if(other) modelBEl.value = other;
+    }
+    modelStatus.textContent = "";
+  }catch(e){
+    state.models = [];
+    modelEl.innerHTML = "<option value=\"\">Unavailable</option>";
+    modelStatus.innerHTML = '<span class="error-text">' + esc(e.message) + "</span>";
+  }
+  modelBWrap.classList.toggle("hidden", !compareToggle.checked);
+}
+// ---- mood chips ----
+document.querySelectorAll(".chip").forEach(ch => {
+  const pick = () => {
+    const on = ch.getAttribute("aria-pressed") === "true";
+    document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", "false"));
+    if(!on){
+      ch.setAttribute("aria-pressed", "true");
+      const cur = moodEl.value.trim();
+      moodEl.value = cur ? cur.replace(/\s+$/, "") + " · " + ch.dataset.mood : ch.dataset.mood;
+      moodEl.focus();
+    }
+  };
+  ch.addEventListener("click", pick);
+  ch.addEventListener("keydown", (e) => { if(e.key === "Enter" || e.key === " "){ e.preventDefault(); pick(); } });
+});
+// ---- result render ----
+function stopTimer(){ if(state.timerId){ clearInterval(state.timerId); state.timerId = null; } state.timerRunning = false; }
+function fmt(s){ return String(Math.floor(s/60)).padStart(2,"0") + ":" + String(s%60).padStart(2,"0"); }
+function renderResult(data, host){
+  stopTimer();
+  state.timerLeft = (data.minutes || 20) * 60;
+  const bring = Array.isArray(data.bring) ? data.bring.filter(Boolean) : [];
+  host.innerHTML =
+    '<p class="kicker">Your nudge · ' + esc(data.minutes ?? 20) + ' min' +
+    (data.energy ? " · " + esc(data.energy) + " energy" : "") + "</p>" +
+    "<h3>" + esc(data.title || "A small outing") + "</h3>" +
+    '<p class="task">' + esc(data.task || "") + "</p>" +
+    (data.why_it_fits ? '<p class="why">' + esc(data.why_it_fits) + "</p>" : "") +
+    (bring.length ? '<ul class="bring" aria-label="Useful items">' +
+      bring.map(b => "<li>" + esc(b) + "</li>").join("") + "</ul>" : "") +
+    '<p class="meta"><span>' + esc(data.model || "") + "</span><span>" +
+    esc(data.part_of_day || "") + "</span><span>" + esc(data.local_time || "") + "</span>" +
+    (data.weather && data.weather.override ? "<span>manual weather</span>" : "") + "</p>" +
+    '<div class="timer"><output id="tout' + (host.id || "x") + '">' + fmt(state.timerLeft) + "</output>" +
+    '<button type="button" class="ghost" data-t="start">Start</button>' +
+    '<button type="button" class="ghost" data-t="stop">Stop</button>' +
+    '<span class="tmsg" aria-live="polite"></span></div>' +
+    '<div class="actions">' +
+    '<button type="button" class="ghost" data-a="easier">Nope, something easier</button>' +
+    '<button type="button" class="ghost" data-a="another">Give me another</button>' +
+    '<button type="button" class="ghost" data-a="done">Done! I did it</button></div>' +
+    '<p class="status" aria-live="polite"></p>';
+  const out = host.querySelector("output"), msg = host.querySelector(".tmsg"),
+    status = host.querySelector(".status");
+  const startBtn = host.querySelector('[data-t="start"]'), stopBtn = host.querySelector('[data-t="stop"]');
+  const tick = () => {
+    state.timerLeft -= 1;
+    if(state.timerLeft <= 0){
+      state.timerLeft = 0; stopTimer(); out.textContent = fmt(0);
+      msg.textContent = "Time to head back";
+      startBtn.disabled = false; stopBtn.disabled = true;
+      return;
+    }
+    out.textContent = fmt(state.timerLeft);
+  };
+  startBtn.disabled = false; stopBtn.disabled = true;
+  startBtn.addEventListener("click", () => {
+    if(state.timerRunning) return;
+    if(state.timerLeft <= 0) state.timerLeft = (data.minutes || 20) * 60;
+    stopTimer(); state.timerRunning = true; msg.textContent = "";
+    state.timerId = setInterval(tick, 1000);
+    startBtn.disabled = true; stopBtn.disabled = false;
+  });
+  stopBtn.addEventListener("click", () => {
+    stopTimer(); startBtn.disabled = false; stopBtn.disabled = true;
+  });
+  host.querySelectorAll("[data-a]").forEach(b => b.addEventListener("click", () => onAction(b.dataset.a, data, host, status, b)));
+  host.classList.remove("hidden");
+}
+// ---- nudge flow ----
+function moodValue(){ return moodEl.value.trim(); }
+function buildBody(mood, model, extra){
+  const body = { mood, model };
+  const wo = weatherOverride();
+  if(wo) body.weather_override = wo;
+  if(state.excluded.length) body.exclude = state.excluded.slice(-10);
+  return Object.assign(body, extra || {});
+}
+async function requestNudge(body){
+  return api("/api/nudge", { method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify(body) });
+}
+function setBusy(b, label){
+  state.busy = b; nudgeBtn.disabled = b;
+  nudgeStatus.textContent = b ? (label || "Asking your local model…") : "";
+}
+async function doNudge(opts){
+  opts = opts || {};
+  const mood = moodValue();
+  if(!mood){ nudgeStatus.innerHTML = '<span class="error-text">Tell me how you feel first — a few words is enough.</span>'; moodEl.focus(); return; }
+  if(state.busy) return;
+  const model = modelEl.value;
+  if(!model){ nudgeStatus.innerHTML = '<span class="error-text">No local model available. Start Ollama and pull a model first.</span>'; return; }
+  const body = buildBody(mood, model, opts.extra);
+  setBusy(true);
+  try{
+    const data = await requestNudge(body);
+    state.current = data;
+    if(data.title) state.excluded.push(data.title);
+    renderResult(data, resultEl);
+    compareSec.classList.add("hidden");
+    nudgeStatus.textContent = "";
+    loadHistory();
+    resultEl.scrollIntoView({ block:"nearest", behavior:"smooth" });
+  }catch(e){
+    nudgeStatus.innerHTML = '<span class="error-text">' + esc(e.message) + "</span>";
+  }finally{
+    setBusy(false);
+  }
+}
+async function doCompare(){
+  const mood = moodValue();
+  if(!mood){ nudgeStatus.innerHTML = '<span class="error-text">Tell me how you feel first — a few words is enough.</span>'; moodEl.focus(); return; }
+  if(state.busy) return;
+  const a = modelEl.value, b = modelBEl.value;
+  if(!a || !b){ nudgeStatus.innerHTML = '<span class="error-text">Pick two models to compare.</span>'; return; }
+  if(a === b){ nudgeStatus.innerHTML = '<span class="error-text">Pick two different models to compare.</span>'; return; }
+  setBusy(true, "Asking both models…");
+  compareGrid.innerHTML = ""; compareSec.classList.remove("hidden"); resultEl.classList.add("hidden");
+  const mk = (tag) => { const d = document.createElement("div"); d.className = "result"; d.innerHTML = '<p class="model-tag">' + esc(tag) + '</p><p class="status">Asking your local model…</p>'; compareGrid.appendChild(d); return d; };
+  const hostA = mk(a), hostB = mk(b);
+  const run = async (model, host) => {
+    try{
+      const data = await requestNudge(buildBody(mood, model, {}));
+      host.querySelector("p").outerHTML = '<p class="model-tag">' + esc(model) + "</p>";
+      renderResult(data, host);
+      if(data.title) state.excluded.push(data.title);
+      return true;
+    }catch(e){
+      host.innerHTML = '<p class="model-tag">' + esc(model) + '</p><p class="status"><span class="error-text">' + esc(e.message) + "</span></p>";
+      return false;
+    }
+  };
+  await Promise.all([run(a, hostA), run(b, hostB)]);
+  setBusy(false); loadHistory();
+}
+async function onAction(kind, data, host, statusEl, btn){
+  if(kind === "done"){
+    // Mark this nudge done on the server: POST /api/done {id} -> history.json.
+    if(!data.id){
+      statusEl.textContent = "This nudge has no server record yet — nothing to mark.";
+      return;
+    }
+    btn.disabled = true;
+    statusEl.textContent = "Saving…";
+    try{
+      await api("/api/done", { method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({ id: data.id }) });
+      btn.classList.add("done"); btn.textContent = "Done ✓";
+      statusEl.textContent = "Nice — marked as done on the server (saved in History).";
+      data.done = true;
+      loadHistory();
+    }catch(e){
+      btn.disabled = false;
+      statusEl.innerHTML = '<span class="error-text">' + esc(e.message) + "</span>";
+    }
+    return;
+  }
+  if(state.busy) return;
+  const mood = moodValue() || data.mood || "";
+  const extra = { exclude: Array.from(new Set([data.title].concat(state.excluded.slice(-9)))) };
+  if(kind === "easier") extra.easier = true;
+  btn.disabled = true;
+  statusEl.textContent = "Asking your local model…";
+  try{
+    const fresh = await requestNudge(buildBody(mood, data.model || modelEl.value, extra));
+    state.current = fresh;
+    if(fresh.title) state.excluded.push(fresh.title);
+    renderResult(fresh, host);
+    loadHistory();
+  }catch(e){
+    statusEl.innerHTML = '<span class="error-text">' + esc(e.message) + "</span>";
+  }finally{
+    btn.disabled = false;
+  }
+}
+nudgeBtn.addEventListener("click", () => { if(compareToggle.checked) doCompare(); else doNudge(); });
+compareToggle.addEventListener("change", () => { modelBWrap.classList.toggle("hidden", !compareToggle.checked); });
+
+
+
+// ---- history ----
+async function loadHistory(){
+  if(!histBox.open) return;
+  histStatus.textContent = "Loading…"; histList.innerHTML = "";
+  try{
+    const d = await api("/api/history");
+    const items = (d && d.history) || [];
+    histStatus.textContent = "";
+    if(!items.length){ histStatus.textContent = "Nothing yet — your nudges will appear here."; return; }
+    const last = items.slice(-12).reverse();
+    for(const h of last){
+      const li = document.createElement("li");
+      const isDone = !!h.done;
+      li.innerHTML = (isDone ? '<span class="st">done</span>' : "") +
+        "<span>" + esc(h.title || "(untitled)") + "</span>" +
+        "<small>" + esc(h.timestamp || "") + (h.mood ? " · " + esc(h.mood) : "") +
+        (h.energy ? " · " + esc(h.energy) : "") + "</small>";
+      histList.appendChild(li);
+    }
+  }catch(e){
+    histStatus.innerHTML = '<span class="error-text">' + esc(e.message) + "</span>";
+  }
+}
+histBox.addEventListener("toggle", loadHistory);
+// ---- init ----
+loadWeather();
+loadModels();
+</script>
+</body>
+</html>
