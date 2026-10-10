@@ -1,0 +1,10 @@
+# Outdoor Nudge - pinned runtime + test dependencies
+fastapi==0.143.0
+uvicorn==0.54.0
+requests==2.34.2
+ollama==0.6.3
+pydantic==2.14.0
+
+# Tests
+playwright==1.63.0
+

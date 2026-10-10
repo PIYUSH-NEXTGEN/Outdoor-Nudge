@@ -1,0 +1,47 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# --- Virtual environments ---
+venv/
+.venv/
+env/
+ENV/
+
+# --- Secrets / local config ---
+.env
+.env.*
+!.env.example
+
+# --- Private data: history.json contains the user's private moods. NEVER commit. ---
+data/
+*.tmp
+
+# --- Test artifacts / result JSONs ---
+*_results.json
+test_*_results.json
+.pytest_cache/
+.coverage
+htmlcov/
+
+# --- IDE / editor folders ---
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# --- OS junk ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- Logs ---
+*.log
