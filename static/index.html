@@ -232,15 +232,15 @@ async function loadModels(){
     const d = await api("/api/models");
     // de-dupe: Ollama can list the same tag twice (e.g. from multiple sources)
     state.models = Array.from(new Set((d && d.models) || []));
-    if(!state.models.length){ throw new Error("No local models found. Run: ollama pull llama3.2:3b"); }
+    if(!state.models.length){ throw new Error("No local models found. Run: ollama pull gemma3:4b"); }
     const keep = modelEl.value, keepB = modelBEl.value;
     modelEl.innerHTML = ""; modelBEl.innerHTML = "";
     for(const m of state.models){
       const o = document.createElement("option"); o.value = m; o.textContent = m; modelEl.appendChild(o);
       const o2 = document.createElement("option"); o2.value = m; o2.textContent = m; modelBEl.appendChild(o2);
     }
-    // default compare pair: llama3.2:3b vs gemma3:4b (when both are available)
-    const DEFAULT_COMPARE = ["llama3.2:3b", "gemma3:4b"];
+    // default compare pair: gemma3:4b (main) vs llama3.2:3b (when both are available)
+    const DEFAULT_COMPARE = ["gemma3:4b", "llama3.2:3b"];
     if(state.models.includes(keep) && keep) modelEl.value = keep;
     else modelEl.value = state.models.includes(DEFAULT_COMPARE[0]) ? DEFAULT_COMPARE[0] : state.models[0];
     // second model must differ from the first when possible

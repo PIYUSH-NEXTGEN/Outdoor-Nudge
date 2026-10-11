@@ -8,7 +8,7 @@ import os
 
 # --- Ollama ---------------------------------------------------------------
 OLLAMA_HOST = os.environ.get("OLLAMA_HOST", "http://localhost:11434")
-DEFAULT_MODEL = os.environ.get("NUDGE_MODEL", "llama3.2:3b")
+DEFAULT_MODEL = os.environ.get("NUDGE_MODEL", "gemma3:4b")
 
 # --- Weather / location ---------------------------------------------------
 OPEN_METEO_URL = os.environ.get(

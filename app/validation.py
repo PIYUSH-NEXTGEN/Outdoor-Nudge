@@ -312,6 +312,104 @@ NIGHT_HUMAN_RE = re.compile(r"\b(?:strangers?|passers?-?by|passersby|passerby|pe
 NEIGHBOUR_RE = re.compile(r"neighbou?r\w*", re.I)
 
 
+# --- lonely-contact quality rules -----------------------------------------
+# A "real person" a lonely task may connect with (nouns only, not verbs).
+PERSON_TARGET_RE = re.compile(
+    r"neighbou?r\w*|passers?-?by|passerby|friend\w*|famil\w*|someone|somebody|"
+    r"people|persons?|pedestrian\w*|joggers?|runners?|dog[- ]?walk\w*|"
+    r"locals?|kids?|children|child|parents?|strangers?|whoever|anyone|"
+    r"partner|flatmates?|roommates?|colleagues?|coworkers?|mum|mom|dad|"
+    r"sister|brother|cousin\w*|grandparent\w*|a face|new face|"
+    r"another (?:person|human|soul|neighbou?r)|a real person", re.I)
+
+# Gesture verbs whose target must be a real person (never an object).
+CONTACT_VERB_RE = re.compile(
+    r"\b(?:wave|waves|waved|waving|smile|smiles|smiled|smiling|"
+    r"greet|greets|greeted|greeting|nod|nods|nodded|nodding)\b", re.I)
+
+# Any act that actually reaches out to a person (gesture OR remote contact).
+# A bare person-word (e.g. "your neighbor's garden") is NOT contact, so the
+# day-lonely rule keys off this, not off PERSON_TARGET_RE alone.
+CONTACT_ACT_RE = re.compile(
+    r"\b(?:wave|waves|waved|waving|smile|smiles|smiled|smiling|"
+    r"greet|greets|greeted|greeting|nod|nods|nodded|nodding|"
+    r"chat|chats|chatted|chatting|talk|talks|talking|"
+    r"say\s+(?:hi|hello|hey|good\s+(?:morning|afternoon|evening)|something|"
+    r"good ?morning)|hello|\bhi\b|compliment|ask|asks|asking|"
+    r"call|calls|calling|ring|rings|phone|phoning|dial|"
+    r"text|texts|texting|message|messages|messaging|send|sends|sending|"
+    r"voice ?note|leave a (?:message|note)|check in)\b", re.I)
+
+# Things a contact gesture must NEVER be aimed at (not people).
+NONPERSON_TARGET_RE = re.compile(
+    r"shadows?|street ?lights?|streetlight|lamplights?|lamplight|lights?|"
+    r"buildings?|clouds?|moon|stars?|trees?|plants?|flowers?|signs?|windows?|"
+    r"doors?|walls?|sk(?:y|ies)|the air|ground|pavement|reflections?|statues?|"
+    r"monuments?|cars?|birds?|squirrels?|traffic|your reflection", re.I)
+
+# Night lonely: the ONLY safe contacts (message/voice note/call, or a quiet
+# wave at a lit window / a neighbour at their door). No strangers required.
+NIGHT_LONELY_CONTACT_RE = re.compile(
+    r"\b(?:send|text|texts|texting|leave|drop|write)\b[^.!?]{0,35}"
+    r"\b(?:message|text|voice ?note|voicemail|note)\b"
+    r"|\b(?:voice ?note|voice message|voice memo|voicemail)\b"
+    r"|\b(?:call|calls|calling|ring|rings|phone|phoning|dial|facetime|video[- ]?call)\b"
+    r"[^.!?]{0,35}\b(?:a |your |one |some |a close )?"
+    r"(?:friend|neighbou?r|someone|somebody|family|relative|parent|sibling|"
+    r"sister|brother|partner|person|love ?one|loved ?one)\b"
+    r"|\b(?:call|ring|phone|dial)\b[^.!?]{0,20}\b(?:them|him|her|up)\b"
+    r"|\bwave\b[^.!?]{0,35}\b(?:lit|lighted|glowing|warm)\b[^.!?]{0,10}\bwindows?\b"
+    r"|\bwave\b[^.!?]{0,35}\bneighbou?r\b", re.I)
+
+# A solid night anchor that does NOT assume a balcony exists.
+NIGHT_SOLID_ANCHOR_RE = re.compile(
+    r"\b(?:doors?|doorstep|door step|stoop|threshold|porch|windows?|front steps?|"
+    r"entrance|gate|home|your step|front door|doorway)\b", re.I)
+
+# Loud / vigorous movement that must NOT appear in a night task.
+NIGHT_LOUD_MOVE_RE = re.compile(
+    r"jumping jacks?|star jumps?|burpees?|shadow[- ]?box\w*|sprint\w*|jog\w*|"
+    r"\brunning?\b|\bmarch\w*|\bpower[- ]?walk\w*|\bskip(?:s|ping|ped)?\b|"
+    r"\bhop(?:s|ping|ped)?\b|\bjumping\b|\bjumps?\b|\bbounc\w*|"
+    r"jump\w* up and down|high knees|squat jumps?|tuck jumps?|plyometric\w*|\bkip\b|"
+    r"\bbrisk(?:ly)?\b|\bdash\w*|\brace\w*|\bchase\w*|\bdodge\w*", re.I)
+
+# Invented, non-universal scavenger items that must not appear in a hunt.
+SCAVENGER_INVENTED_BAN = (
+    (r"\bred doors?\b", "scavenger-red-door"),
+    (r"\bcrooked signs?\b", "scavenger-crooked-sign"),
+    (r"\bfeathers?\b", "scavenger-feather"),
+    (r"\buneven(?:ness)?\b", "scavenger-unevenness"),
+)
+
+# Purely-mental activities that are not real outdoor doing (esp. sketch/write).
+IN_HEAD_BAN = (
+    (r"\bin your head\b", "sketch-in-your-head"),
+    (r"\bin your mind\b", "sketch-in-your-head"),
+    (r"\bin your imagination\b", "sketch-in-your-head"),
+    (r"\bpurely in your\b", "sketch-in-your-head"),
+    (r"\bonly in your head\b", "sketch-in-your-head"),
+)
+
+# A ~20-minute mission must not be shrunk to a few seconds as its total (e.g.
+# "10 seconds apart", "for 5 seconds"). Per-item pacing like "30 seconds each"
+# or "5 seconds to observe" is fine and NOT matched here.
+SHORT_DURATION_RE = re.compile(
+    r"\b\d{1,3}\s*seconds?\s+apart\b"
+    r"|\b(?:for|in|within|over|lasts?|lasting|last|totaling|totalling|altogether)\s+"
+    r"(?:just\s+|only\s+|about\s+)?\d{1,3}\s*seconds?\b", re.I)
+
+
+def _contact_targets_person(m: re.Match, low: str) -> bool:
+    """True when the contact gesture at match m is aimed at a real person.
+    A gesture is bad when the words right after it name an object (shadow,
+    light, building...) and no person."""
+    target = low[m.end():m.end() + 45]
+    if NONPERSON_TARGET_RE.search(target) and not PERSON_TARGET_RE.search(target):
+        return False
+    return True
+
+
 WALK_ONLY_RE = re.compile(r"\b(?:go(?:ing)? for a (?:walk|stroll|wander)|take a (?:walk|stroll|wander)|"
                           r"head(?:ing)? out for a (?:walk|stroll)|go walking|walk around|stroll around|"
                           r"wander around|wander aimlessly|stretch your legs|get some fresh air|"
@@ -405,13 +503,19 @@ def safety_violations(title_task: str, category: str = "", mood_l: str = "",
     for pat, label in OBJECT_BAN:
         if re.search(pat, scan) and not re.search(pat, mood_l):
             out.append(f"object-ban:{label}")
-    # night: anchor at own door/balcony/window, no walking away, no stranger contact
+    # night: anchor at own door/window (never assume a balcony), no walking away,
+    # no stranger contact, and movement must be quiet
     if night:
         if not NIGHT_ANCHOR_RE.search(low):
             out.append("night-needs-door-anchor")
+        elif not NIGHT_SOLID_ANCHOR_RE.search(low):
+            # anchored only on something like a balcony -> assumes one exists
+            out.append("night-assumes-balcony")
         away = NIGHT_AWAY_MASK.sub(" ", low)
         if first_unnegated(NIGHT_AWAY_RE, away):
             out.append("night-no-walking-away")
+        if first_unnegated(NIGHT_LOUD_MOVE_RE):
+            out.append("night-loud-movement")
         for m in NIGHT_INTERACT_VERBS_RE.finditer(low):
             if _negated(low, m.start()):
                 continue
@@ -427,6 +531,34 @@ def safety_violations(title_task: str, category: str = "", mood_l: str = "",
             if not _negated(low, m.start()):
                 out.append("night-no-stranger-contact")
                 break
+    # lonely mood: contact must be with a REAL PERSON, never an object
+    if LONELY_MOOD_RE.search(mood_l):
+        if night:
+            # night lonely: only message/voice note/call, or a quiet wave at a
+            # lit window / a neighbour at their door - never a stranger errand
+            if not NIGHT_LONELY_CONTACT_RE.search(low):
+                out.append("lonely-night-needs-safe-contact")
+        else:
+            if not CONTACT_ACT_RE.search(low):
+                out.append("lonely-needs-human-contact")
+            # any wave/smile/greet must target a person, not an object
+            for m in CONTACT_VERB_RE.finditer(low):
+                if _negated(low, m.start()):
+                    continue
+                if not _contact_targets_person(m, low):
+                    out.append("lonely-contact-not-a-person")
+                    break
+    # scavenger hunts: items must be universal, never invented specifics
+    for pat, label in SCAVENGER_INVENTED_BAN:
+        if first_unnegated(re.compile(pat, re.I)):
+            out.append(label)
+    # "sketch/write it in your head" is not a real outdoor activity
+    for pat, label in IN_HEAD_BAN:
+        if first_unnegated(re.compile(pat, re.I)):
+            out.append(label)
+    # a ~20-minute mission shrunk to a few seconds is trivial, not a real task
+    if first_unnegated(SHORT_DURATION_RE):
+        out.append("too-short-duration")
     # generic bare walk needs a specific odd goal
     if first_unnegated(WALK_ONLY_RE) and not WALK_GOAL_RE.search(low):
         out.append("generic-walk")
@@ -497,14 +629,11 @@ def validate_nudge(obj: dict, category: str = "", exclude: list | None = None,
         if re.search(pat, low) and not re.search(pat, mood_l):
             return fail(f"venue-ban:{label}")
     # hard safety & realism rules (no eating/tasting/bare hands, no climbing/roads/water,
-    # no assumed objects, night door-anchor, no bare walks, no ordinary chores)
+    # no assumed objects, night door-anchor + quiet movement, no bare walks, no ordinary
+    # chores, lonely = real-person contact, no "in your head", no invented scavenger items)
     viol = safety_violations(obj["title"] + " " + obj["task"], category, mood_l, night)
     if viol:
         return fail(viol[0])
-    # loneliness rule: lonely/isolated/alone moods need gentle human contact in the task.
-    # Skipped at night: the night rule bans stranger contact, which wins over loneliness.
-    if LONELY_MOOD_RE.search(mood_l) and not night and not CONTACT_RE.search(low):
-        return fail("lonely-needs-human-contact")
     # verb ban: title's first verb must not repeat any exclude title's first verb
     bv = banned_verbs(exclude or [])
     tv = first_verb(obj["title"])

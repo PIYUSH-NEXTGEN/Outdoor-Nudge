@@ -195,10 +195,18 @@ def api_nudge(req: NudgeRequest):
                        + f"\nYour previous reply was invalid: {last_reason}. Fix that specific problem "
                        + "(never instruct eating/tasting or bare-hand contact with plants or litter; "
                        + "no climbing, furniture, roads or water; no assumed objects like bench/bin/"
-                       + "bag/paper/notebook unless the mood names them; no bare walks or ordinary "
-                       + "chores; night = own door/balcony/window only, no strangers; venue words only "
-                       + "if the mood names them; human contact if the mood is lonely; match the "
-                       + "category/energy rules) "
+                       + "bag/paper/notebook/balcony unless the mood names them; no bare walks or "
+                       + "ordinary chores; night = own doorstep/a window/balcony-if-you-have-one only, "
+                       + "no walking away, no strangers, and QUIET movement only (stretching, slow "
+                       + "breathing, standing balance - no jumping jacks/marching); if lonely at night, "
+                       + "only send a short message/voice note, call a friend, or wave at a lit window "
+                       + "or a neighbour at their door; if lonely by day, the contact must be a REAL "
+                       + "person (neighbour/passerby/friend/family), never an object like shadows or "
+                       + "streetlights; scavenger items must be UNIVERSAL (something round, something "
+                       + "older than you, three different greens) - never a red door/crooked sign/"
+                       + "feather/unevenness; sketch/write in your phone's notes app, never only 'in "
+                       + "your head'; venue words only if the mood names them; match the category/"
+                       + "energy rules) "
                        + "and reply with VALID JSON ONLY matching the schema exactly.")
     if nudge is None:
         return JSONResponse({"error": f"Model response failed validation 4 times (missing fields, wrong category/energy, safety/realism rule, or repeated verb). {first_err[:200]} Try again."}, status_code=502)
