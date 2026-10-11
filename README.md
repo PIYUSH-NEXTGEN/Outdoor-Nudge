@@ -4,27 +4,6 @@
 
 [Report a Bug](../../issues)
 
-## Table of Contents
-
-- [Overview](#overview)
-- [Problem Statement](#problem-statement)
-- [Features](#features)
-- [Demo](#demo)
-- [How It Works](#how-it-works)
-- [Architecture](#architecture)
-- [Tech Stack](#tech-stack)
-- [Codebase Structure](#codebase-structure)
-- [Getting Started](#getting-started)
-- [Usage](#usage)
-- [Configuration Reference](#configuration-reference)
-- [Testing](#testing)
-- [Security](#security)
-- [Limitations](#limitations)
-- [Roadmap](#roadmap)
-- [Contributing](#contributing)
-- [License](#license)
-- [Acknowledgements](#acknowledgements)
-
 ## Overview
 
 Outdoor Nudge is a tiny local first web app. You type your mood in plain words
