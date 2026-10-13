@@ -355,43 +355,6 @@ LLM output is treated as untrusted: anything that fails `validate_nudge()`
 commit it. If you find a security problem, open a private issue or PR instead
 of posting the exploit publicly.
 
-## Limitations
 
-Honest list of rough edges:
 
-* You need Ollama running with a chat model pulled. First run downloads GBs,
-  and each nudge takes however long your hardware needs (CPU only can be a
-  minute or two).
-* Weather needs internet. Offline you have to type the conditions yourself.
-* Single user, single machine. History is a local JSON file, no sync, no
-  accounts, no mobile app.
-* On small or weak models the LLM can fail validation 4 times in a row. The
-  API then returns 502 and the UI asks you to try again.
-* The safety rules are regex heuristics, not a guarantee. Use common sense
-  outside.
-
-## Roadmap
-
-* Offline weather cache plus last known fallback
-* Favorites plus streaks and reminders
-* PWA install plus a share a nudge link
-* Optional lint and format config (ruff) with a CI check
-
-## Contributing
-
-Found a bug or got a bad nudge? Open an issue with the mood, the weather, the
-model, and the title and task it returned. To fix things: fork, make a branch,
-tweak the rule in `app/validation.py` and `app/prompts.py` with a new case in
-`tests/test_safety_unit.py`, run the offline tests, open a PR. There is no
-`CONTRIBUTING.md` yet, small PRs are very welcome.
-
-## License
-
-MIT, see LICENSE.
-
-## Acknowledgements
-
-Thanks to Ollama for free local LLMs (default model family here is Gemma),
-Open-Meteo for weather data without a key, and FastAPI, Uvicorn, and Playwright
-for doing the heavy lifting.
 
