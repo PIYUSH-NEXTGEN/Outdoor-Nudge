@@ -22,10 +22,6 @@ No paid APIs, no accounts, no sign up.
 break outside would help, but in the moment you can't think of anything specific
 to do. So you scroll instead, or take the same boring loop around the block.
 
-**Why existing stuff falls short.** Weather apps show you numbers but never tell
-you what to *do*. Wellness apps want subscriptions and cloud accounts, and their
-advice is vague ("touch grass", "clear your mind") with zero regard for the
-actual weather, the time of day, or whether the idea is even safe.
 
 **What this does differently.** It mixes free live weather (Open-Meteo) with a
 local LLM (Ollama), then runs every suggestion through a strict prompt and a
