@@ -1,12 +1,6 @@
 # Outdoor Nudge
 
-> Tell it how you feel, get one small outdoor mission back. Built for those afternoons when you know you should step outside but can't think of what to actually do.
-
-[Report a Bug](../../issues)
-
-## Overview
-
-Outdoor Nudge is a tiny local first web app. You type your mood in plain words
+Outdoor Nudge is a  local first web app. You type your mood in plain words
 ("restless and stuck at my desk"), it looks up the live weather for your spot
 using Open-Meteo, and a local LLM (Ollama, `gemma3:4b` by default) comes up with
 exactly one concrete outdoor task of about 20 minutes.
